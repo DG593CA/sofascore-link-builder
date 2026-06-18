@@ -2,27 +2,31 @@
 
 // 1. Dataset of all countries with their deep link templates, payouts, currencies, and statuses
 const countriesData = [
-  { name: 'Argentina', code: 'AR', flag: '🇦🇷', deepLink: 'https://app.sofascore.com/nixz/wc26_arg', payout: 0.25, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'United Kingdom', code: 'UK', flag: '🇬🇧', deepLink: 'https://app.sofascore.com/nixz/wc26_uk', payout: 0.80, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'France', code: 'FR', flag: '🇫🇷', deepLink: 'https://app.sofascore.com/nixz/wc26_fra', payout: 0.30, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'Spain', code: 'ES', flag: '🇪🇸', deepLink: 'https://app.sofascore.com/nixz/wc26_spa', payout: 0.40, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'Canada', code: 'CA', flag: '🇨🇦', deepLink: 'https://app.sofascore.com/nixz/wc26_can', payout: 0.50, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'Portugal', code: 'PT', flag: '🇵🇹', deepLink: 'https://app.sofascore.com/nixz/wc26_por', payout: 0.30, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'Ghana', code: 'GH', flag: '🇬🇭', deepLink: 'https://app.sofascore.com/nixz/main_b', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: "Cote d'Ivoire", code: 'CIV', campaignCode: 'CIV', flag: '🇨🇮', deepLink: 'https://app.sofascore.com/nixz/wc26_civ', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'Indonesia', code: 'ID', flag: '🇮🇩', deepLink: 'https://app.sofascore.com/nixz/wc26_main', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'Mexico', code: 'MX', flag: '🇲🇽', deepLink: 'https://app.sofascore.com/nixz/wc26_mex', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
-  { name: 'Austria', code: 'AT', campaignCode: 'AUS', flag: '🇦🇹', deepLink: 'https://app.sofascore.com/nixz/wc26_aus', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'Croatia', code: 'HR', campaignCode: 'CRO', flag: '🇭🇷', deepLink: 'https://app.sofascore.com/nixz/wc26_cro', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'Egypt', code: 'EG', campaignCode: 'EGY', flag: '🇪🇬', deepLink: 'https://app.sofascore.com/nixz/wc26_egy', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'Germany', code: 'DE', campaignCode: 'GER', flag: '🇩🇪', deepLink: 'https://app.sofascore.com/nixz/wc26_ger', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'Japan', code: 'JP', campaignCode: 'JAP', flag: '🇯🇵', deepLink: 'https://app.sofascore.com/nixz/wc26_jap', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'Morocco', code: 'MA', campaignCode: 'MOR', flag: '🇲🇦', deepLink: 'https://app.sofascore.com/nixz/wc26_mor', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'Netherlands', code: 'NL', campaignCode: 'NED', flag: '🇳🇱', deepLink: 'https://app.sofascore.com/nixz/wc26_ned', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'Norway', code: 'NO', campaignCode: 'NOR', flag: '🇳🇴', deepLink: 'https://app.sofascore.com/nixz/wc26_nor', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'Senegal', code: 'SN', campaignCode: 'SEN', flag: '🇸🇳', deepLink: 'https://app.sofascore.com/nixz/wc26_sen', payout: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
-  { name: 'USA', code: 'US', campaignCode: 'USA', flag: '🇺🇸', deepLink: 'https://app.sofascore.com/nixz/wc26_usa', payout: 0.80, currency: 'EUR', lookback: '7d', status: 'sensitive', sensitive: true },
-  { name: 'Brazil', code: 'BR', campaignCode: 'BRA', flag: '🇧🇷', deepLink: 'https://app.sofascore.com/nixz/wc26_bra', payout: 0.35, currency: 'EUR', lookback: '7d', status: 'sensitive', sensitive: true }
+  { name: 'Argentina', code: 'AR', flag: '🇦🇷', deepLink: 'https://app.sofascore.com/nixz/wc26_arg', payoutIOS: 0.85, payoutAOS: 0.25, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'United Kingdom', code: 'UK', flag: '🇬🇧', deepLink: 'https://app.sofascore.com/nixz/wc26_uk', payoutIOS: 1.40, payoutAOS: 0.80, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'France', code: 'FR', flag: '🇫🇷', deepLink: 'https://app.sofascore.com/nixz/wc26_fra', payoutIOS: 0.30, payoutAOS: 0.30, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'Spain', code: 'ES', flag: '🇪🇸', deepLink: 'https://app.sofascore.com/nixz/wc26_spa', payoutIOS: 0.80, payoutAOS: 0.40, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'Canada', code: 'CA', flag: '🇨🇦', deepLink: 'https://app.sofascore.com/nixz/wc26_can', payoutIOS: 2.40, payoutAOS: 0.50, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'Portugal', code: 'PT', flag: '🇵🇹', deepLink: 'https://app.sofascore.com/nixz/wc26_por', payoutIOS: 0.30, payoutAOS: 0.30, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'Ghana', code: 'GH', flag: '🇬🇭', deepLink: 'https://app.sofascore.com/nixz/main_b', payoutIOS: 0.11, payoutAOS: 0.11, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: "Cote d'Ivoire", code: 'CIV', campaignCode: 'CIV', flag: '🇨🇮', deepLink: 'https://app.sofascore.com/nixz/wc26_civ', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'Indonesia', code: 'ID', flag: '🇮🇩', deepLink: 'https://app.sofascore.com/nixz/wc26_main', payoutIOS: 0.45, payoutAOS: 0.45, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'Mexico', code: 'MX', flag: '🇲🇽', deepLink: 'https://app.sofascore.com/nixz/wc26_mex', payoutIOS: 0.45, payoutAOS: 0.45, currency: 'EUR', lookback: '7d', status: 'launch', sensitive: false },
+  { name: 'Austria', code: 'AT', campaignCode: 'AUS', flag: '🇦🇹', deepLink: 'https://app.sofascore.com/nixz/wc26_aus', payoutIOS: 0.45, payoutAOS: 0.45, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Croatia', code: 'HR', campaignCode: 'CRO', flag: '🇭🇷', deepLink: 'https://app.sofascore.com/nixz/wc26_cro', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Egypt', code: 'EG', campaignCode: 'EGY', flag: '🇪🇬', deepLink: 'https://app.sofascore.com/nixz/wc26_egy', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Germany', code: 'DE', campaignCode: 'GER', flag: '🇩🇪', deepLink: 'https://app.sofascore.com/nixz/wc26_ger', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Japan', code: 'JP', campaignCode: 'JAP', flag: '🇯🇵', deepLink: 'https://app.sofascore.com/nixz/wc26_jap', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Morocco', code: 'MA', campaignCode: 'MOR', flag: '🇲🇦', deepLink: 'https://app.sofascore.com/nixz/wc26_mor', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Netherlands', code: 'NL', campaignCode: 'NED', flag: '🇳🇱', deepLink: 'https://app.sofascore.com/nixz/wc26_ned', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Norway', code: 'NO', campaignCode: 'NOR', flag: '🇳🇴', deepLink: 'https://app.sofascore.com/nixz/wc26_nor', payoutIOS: 0.70, payoutAOS: 0.70, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Senegal', code: 'SN', campaignCode: 'SEN', flag: '🇸🇳', deepLink: 'https://app.sofascore.com/nixz/wc26_sen', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Democratic Republic of Congo', code: 'CD', campaignCode: 'CD', flag: '🇨🇩', deepLink: 'https://app.sofascore.com/nixz/main_b', payoutIOS: 0.20, payoutAOS: 0.20, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Poland', code: 'PL', campaignCode: 'PL', flag: '🇵🇱', deepLink: 'https://app.sofascore.com/nixz/wc26_main', payoutIOS: 0.35, payoutAOS: 0.35, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Cyprus', code: 'CY', campaignCode: 'CY', flag: '🇨🇾', deepLink: 'https://app.sofascore.com/nixz/wc26_main', payoutIOS: 0.35, payoutAOS: 0.35, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'Ireland', code: 'IE', campaignCode: 'IE', flag: '🇮🇪', deepLink: 'https://app.sofascore.com/nixz/wc26_main', payoutIOS: 0.70, payoutAOS: 0.70, currency: 'EUR', lookback: '7d', status: 'standard', sensitive: false },
+  { name: 'USA', code: 'US', campaignCode: 'USA', flag: '🇺🇸', deepLink: 'https://app.sofascore.com/nixz/wc26_usa', payoutIOS: 0.80, payoutAOS: 0.80, currency: 'EUR', lookback: '7d', status: 'sensitive', sensitive: true },
+  { name: 'Brazil', code: 'BR', campaignCode: 'BRA', flag: '🇧🇷', deepLink: 'https://app.sofascore.com/nixz/wc26_bra', payoutIOS: 0.35, payoutAOS: 0.35, currency: 'EUR', lookback: '7d', status: 'sensitive', sensitive: true }
 ];
 
 // 2. State management
@@ -30,7 +34,7 @@ const state = {
   pubId: '',
   mediaSource: 'qinyueblivz_int',
   campaignTemplate: 'CP_GWM_[MARKET]_15odds_impressions',
-  useCapitalPid: false,
+  targetOS: 'android', // 'android' or 'ios'
   selectedMarkets: new Set(),
   activeTab: 'table',
   searchQuery: '',
@@ -80,6 +84,24 @@ function initFormInputs() {
   sensitiveSwitch.addEventListener('change', (e) => {
     state.showSensitive = e.target.checked;
     renderMarketSelector();
+    updateUI();
+  });
+
+  // Target OS platform bindings
+  const btnOsAndroid = document.getElementById('btnOsAndroid');
+  const btnOsiOS = document.getElementById('btnOsiOS');
+
+  btnOsAndroid.addEventListener('click', () => {
+    state.targetOS = 'android';
+    btnOsAndroid.classList.add('active');
+    btnOsiOS.classList.remove('active');
+    updateUI();
+  });
+
+  btnOsiOS.addEventListener('click', () => {
+    state.targetOS = 'ios';
+    btnOsiOS.classList.add('active');
+    btnOsAndroid.classList.remove('active');
     updateUI();
   });
 }
@@ -217,12 +239,17 @@ function setupActionButtons() {
     state.pubId = '';
     state.mediaSource = 'qinyueblivz_int';
     state.campaignTemplate = 'CP_GWM_[MARKET]_15odds_impressions';
+    state.targetOS = 'android';
     state.customPayouts = {};
     state.customLookbacks = {};
     state.customCampaignCodes = {};
     
     document.getElementById('pubId').value = '';
     document.getElementById('mediaSource').value = 'qinyueblivz_int';
+    
+    // Reset OS UI
+    document.getElementById('btnOsAndroid').classList.add('active');
+    document.getElementById('btnOsiOS').classList.remove('active');
     
     selectPreset('launch');
     showToast('Dashboard configuration reset.');
@@ -260,7 +287,8 @@ function buildLink(country) {
   const campaign = state.campaignTemplate.replace('[MARKET]', marketCode);
   
   // Payout and lookback values
-  const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : country.payout;
+  const defaultPayout = state.targetOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+  const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
   const lookback = state.customLookbacks[country.code] || country.lookback;
   
   // Format payout
@@ -370,7 +398,8 @@ function renderTableView(selectedLinks) {
   `;
 
   selectedLinks.forEach(({ country, url }) => {
-    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : country.payout;
+    const defaultPayout = state.targetOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
     const lookback = state.customLookbacks[country.code] || country.lookback;
     const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
     
@@ -487,7 +516,8 @@ function renderCardView(selectedLinks) {
   let html = '<div class="card-view-grid">';
   
   selectedLinks.forEach(({ country, url }) => {
-    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : country.payout;
+    const defaultPayout = state.targetOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
     const lookback = state.customLookbacks[country.code] || country.lookback;
     const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
     const campaign = state.campaignTemplate.replace('[MARKET]', campaignCode);
@@ -627,13 +657,14 @@ function exportToCSV() {
   csvContent += 'Country Name,Country Code,Campaign Name,Payout Value,Payout Currency,Payout Model,Click Lookback,Attribution URL\n';
   
   selectedLinks.forEach(({ country, url }) => {
-    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : country.payout;
+    const defaultPayout = state.targetOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
     const lookback = state.customLookbacks[country.code] || country.lookback;
     const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
     const campaign = state.campaignTemplate.replace('[MARKET]', campaignCode);
     const escapedUrl = url.replace(/"/g, '""');
     
-    csvContent += `"${country.name}","${country.code}","${campaign}",${parseFloat(payout).toFixed(2)},"${country.currency}","CPI","${lookback}","${escapedUrl}"\n`;
+    csvContent += `"${country.name}","${country.code}","${campaign}",${parseFloat(payout).toFixed(2)},"${country.currency}","CPI","${lookback}","${escapedUrl}","${state.targetOS.toUpperCase()}"\n`;
   });
   
   const encodedUri = encodeURI(csvContent);
