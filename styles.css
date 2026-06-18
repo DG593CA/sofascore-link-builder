@@ -1050,3 +1050,58 @@ tr:hover td {
 .stat-value span {
   color: var(--primary);
 }
+
+/* Individual OS Toggle & Badge Styling */
+.os-toggle-group {
+  display: inline-flex;
+  background: rgba(11, 15, 25, 0.6);
+  border: 1px solid var(--border-color);
+  padding: 0.15rem;
+  border-radius: 8px;
+  gap: 0.15rem;
+  align-items: center;
+}
+
+.os-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.os-toggle-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.os-toggle-btn.active.android-btn {
+  background: var(--primary);
+  color: #0b0f19;
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.os-toggle-btn.active.ios-btn {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.os-universal-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  text-align: center;
+  text-transform: uppercase;
+}

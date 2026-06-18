@@ -41,7 +41,8 @@ const state = {
   showSensitive: false,
   customPayouts: {},
   customLookbacks: {},
-  customCampaignCodes: {}
+  customCampaignCodes: {},
+  customOS: {}
 };
 
 // 3. Initialize the application
@@ -95,6 +96,7 @@ function initFormInputs() {
     state.targetOS = 'android';
     btnOsAndroid.classList.add('active');
     btnOsiOS.classList.remove('active');
+    state.customOS = {};
     updateUI();
   });
 
@@ -102,6 +104,7 @@ function initFormInputs() {
     state.targetOS = 'ios';
     btnOsiOS.classList.add('active');
     btnOsAndroid.classList.remove('active');
+    state.customOS = {};
     updateUI();
   });
 }
@@ -243,6 +246,7 @@ function setupActionButtons() {
     state.customPayouts = {};
     state.customLookbacks = {};
     state.customCampaignCodes = {};
+    state.customOS = {};
     
     document.getElementById('pubId').value = '';
     document.getElementById('mediaSource').value = 'qinyueblivz_int';
@@ -286,8 +290,11 @@ function buildLink(country) {
   const marketCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
   const campaign = state.campaignTemplate.replace('[MARKET]', marketCode);
   
+  // Resolve target OS for this country
+  const activeOS = state.customOS[country.code] || state.targetOS;
+  
   // Payout and lookback values
-  const defaultPayout = state.targetOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+  const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
   const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
   const lookback = state.customLookbacks[country.code] || country.lookback;
   
@@ -388,6 +395,7 @@ function renderTableView(selectedLinks) {
           <tr>
             <th>Market</th>
             <th>Type</th>
+            <th style="width: 120px;">OS</th>
             <th>Campaign Name</th>
             <th style="width: 100px;">Payout</th>
             <th style="width: 100px;">Lookback</th>
@@ -398,7 +406,8 @@ function renderTableView(selectedLinks) {
   `;
 
   selectedLinks.forEach(({ country, url }) => {
-    const defaultPayout = state.targetOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const activeOS = state.customOS[country.code] || state.targetOS;
+    const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
     const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
     const lookback = state.customLookbacks[country.code] || country.lookback;
     const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
@@ -421,6 +430,22 @@ function renderTableView(selectedLinks) {
       </span>
     `;
 
+    // OS selector/badge
+    const hasSplitPayout = country.payoutIOS !== country.payoutAOS;
+    let osControlHtml = '';
+    if (hasSplitPayout) {
+      osControlHtml = `
+        <div class="os-toggle-group" data-code="${country.code}">
+          <button type="button" class="os-toggle-btn ios-btn ${activeOS === 'ios' ? 'active' : ''}" data-os="ios">iOS</button>
+          <button type="button" class="os-toggle-btn android-btn ${activeOS === 'android' ? 'active' : ''}" data-os="android">AOS</button>
+        </div>
+      `;
+    } else {
+      osControlHtml = `
+        <span class="os-universal-badge">iOS/AOS</span>
+      `;
+    }
+
     html += `
       <tr data-code="${country.code}">
         <td>
@@ -434,6 +459,7 @@ function renderTableView(selectedLinks) {
           </div>
         </td>
         <td>${typePill}</td>
+        <td>${osControlHtml}</td>
         <td>
           <input type="text" class="value-input campaign-code-input" style="width: 80px; text-align: left; font-family: monospace;" 
                  value="${campaignCode}" data-code="${country.code}" title="Customize campaign market code">
@@ -474,6 +500,19 @@ function renderTableView(selectedLinks) {
   `;
 
   container.innerHTML = html;
+
+  // Add event listeners to OS toggles
+  container.querySelectorAll('.os-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const group = btn.closest('.os-toggle-group');
+      const code = group.getAttribute('data-code');
+      const os = btn.getAttribute('data-os');
+      state.customOS[code] = os;
+      // Clear custom payout override for this country to let it fall back to default payout for the new OS
+      delete state.customPayouts[code];
+      updateUI();
+    });
+  });
 
   // Add event listeners to custom inputs in the table
   container.querySelectorAll('.payout-input').forEach(input => {
@@ -516,7 +555,8 @@ function renderCardView(selectedLinks) {
   let html = '<div class="card-view-grid">';
   
   selectedLinks.forEach(({ country, url }) => {
-    const defaultPayout = state.targetOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const activeOS = state.customOS[country.code] || state.targetOS;
+    const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
     const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
     const lookback = state.customLookbacks[country.code] || country.lookback;
     const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
@@ -532,6 +572,21 @@ function renderCardView(selectedLinks) {
       badgeText = 'Sensitive Market';
     }
 
+    const hasSplitPayout = country.payoutIOS !== country.payoutAOS;
+    let osControlHtml = '';
+    if (hasSplitPayout) {
+      osControlHtml = `
+        <div class="os-toggle-group" data-code="${country.code}">
+          <button type="button" class="os-toggle-btn ios-btn ${activeOS === 'ios' ? 'active' : ''}" data-os="ios">iOS</button>
+          <button type="button" class="os-toggle-btn android-btn ${activeOS === 'android' ? 'active' : ''}" data-os="android">AOS</button>
+        </div>
+      `;
+    } else {
+      osControlHtml = `
+        <span class="os-universal-badge">iOS/AOS</span>
+      `;
+    }
+
     html += `
       <div class="link-card ${country.sensitive ? 'sensitive-card' : ''}">
         <div class="card-header">
@@ -544,18 +599,22 @@ function renderCardView(selectedLinks) {
         
         <div class="card-details-grid">
           <div class="detail-item">
-            <span class="detail-label">Campaign Code</span>
-            <span class="detail-value" style="font-family: monospace;">${campaign}</span>
+            <span class="detail-label">OS Mode</span>
+            <span class="detail-value">${osControlHtml}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Payout rate</span>
             <span class="detail-value">${country.currency === 'USD' ? '$' : '€'}${parseFloat(payout).toFixed(2)} (CPI)</span>
           </div>
           <div class="detail-item">
+            <span class="detail-label">Campaign Code</span>
+            <span class="detail-value" style="font-family: monospace;">${campaign}</span>
+          </div>
+          <div class="detail-item">
             <span class="detail-label">Lookback window</span>
             <span class="detail-value">${lookback}</span>
           </div>
-          <div class="detail-item">
+          <div class="detail-item" style="grid-column: span 2;">
             <span class="detail-label">Deep link base</span>
             <span class="detail-value" style="font-size: 0.65rem; word-break: break-all;">${country.deepLink}</span>
           </div>
@@ -576,6 +635,18 @@ function renderCardView(selectedLinks) {
 
   html += '</div>';
   container.innerHTML = html;
+
+  // Add event listeners to OS toggles
+  container.querySelectorAll('.os-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const group = btn.closest('.os-toggle-group');
+      const code = group.getAttribute('data-code');
+      const os = btn.getAttribute('data-os');
+      state.customOS[code] = os;
+      delete state.customPayouts[code];
+      updateUI();
+    });
+  });
 }
 
 // 3. Render Raw Text View
@@ -654,17 +725,18 @@ function exportToCSV() {
 
   let csvContent = 'data:text/csv;charset=utf-8,';
   // Headers
-  csvContent += 'Country Name,Country Code,Campaign Name,Payout Value,Payout Currency,Payout Model,Click Lookback,Attribution URL\n';
+  csvContent += 'Country Name,Country Code,Campaign Name,Payout Value,Payout Currency,Payout Model,Click Lookback,Attribution URL,Target OS\n';
   
   selectedLinks.forEach(({ country, url }) => {
-    const defaultPayout = state.targetOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const activeOS = state.customOS[country.code] || state.targetOS;
+    const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
     const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
     const lookback = state.customLookbacks[country.code] || country.lookback;
     const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
     const campaign = state.campaignTemplate.replace('[MARKET]', campaignCode);
     const escapedUrl = url.replace(/"/g, '""');
     
-    csvContent += `"${country.name}","${country.code}","${campaign}",${parseFloat(payout).toFixed(2)},"${country.currency}","CPI","${lookback}","${escapedUrl}","${state.targetOS.toUpperCase()}"\n`;
+    csvContent += `"${country.name}","${country.code}","${campaign}",${parseFloat(payout).toFixed(2)},"${country.currency}","CPI","${lookback}","${escapedUrl}","${activeOS.toUpperCase()}"\n`;
   });
   
   const encodedUri = encodeURI(csvContent);
@@ -713,7 +785,9 @@ window.runSanityCheck = function() {
     }
 
     // 4. Payout validation
-    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : country.payout;
+    const activeOS = state.customOS[country.code] || state.targetOS;
+    const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
     const payoutParam = `af_cost_value=${parseFloat(payout).toFixed(2)}`;
     if (!url.includes(payoutParam)) {
       errors.push(`[${country.code}] URL payout value mismatch. Expected: ${payoutParam}`);
