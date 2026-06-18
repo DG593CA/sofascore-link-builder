@@ -34,15 +34,15 @@ const state = {
   pubId: '',
   mediaSource: 'qinyueblivz_int',
   campaignTemplate: 'CP_GWM_[MARKET]_15odds_impressions',
-  targetOS: 'android', // 'android' or 'ios'
+  targetOS: new Set(['android', 'ios']), // Multi-select Set (both active by default)
   selectedMarkets: new Set(),
   activeTab: 'table',
   searchQuery: '',
   showSensitive: false,
-  customPayouts: {},
-  customLookbacks: {},
-  customCampaignCodes: {},
-  customOS: {}
+  customPayouts: {}, // Maps countryCode-os -> payout
+  customLookbacks: {}, // Maps countryCode-os -> lookback
+  customCampaignCodes: {}, // Maps countryCode-os -> campaignCode
+  deletedLinks: new Set() // Maps countryCode-os for deleted rows
 };
 
 // 3. Initialize the application
@@ -92,19 +92,41 @@ function initFormInputs() {
   const btnOsAndroid = document.getElementById('btnOsAndroid');
   const btnOsiOS = document.getElementById('btnOsiOS');
 
+  // Both active by default on load, align UI
+  btnOsAndroid.classList.add('active');
+  btnOsiOS.classList.add('active');
+
   btnOsAndroid.addEventListener('click', () => {
-    state.targetOS = 'android';
-    btnOsAndroid.classList.add('active');
-    btnOsiOS.classList.remove('active');
-    state.customOS = {};
+    const isActive = state.targetOS.has('android');
+    if (isActive && state.targetOS.size === 1) {
+      showToast('At least one Target OS must be selected!', 'warning');
+      return;
+    }
+    if (isActive) {
+      state.targetOS.delete('android');
+      btnOsAndroid.classList.remove('active');
+    } else {
+      state.targetOS.add('android');
+      btnOsAndroid.classList.add('active');
+    }
+    state.deletedLinks.clear();
     updateUI();
   });
 
   btnOsiOS.addEventListener('click', () => {
-    state.targetOS = 'ios';
-    btnOsiOS.classList.add('active');
-    btnOsAndroid.classList.remove('active');
-    state.customOS = {};
+    const isActive = state.targetOS.has('ios');
+    if (isActive && state.targetOS.size === 1) {
+      showToast('At least one Target OS must be selected!', 'warning');
+      return;
+    }
+    if (isActive) {
+      state.targetOS.delete('ios');
+      btnOsiOS.classList.remove('active');
+    } else {
+      state.targetOS.add('ios');
+      btnOsiOS.classList.add('active');
+    }
+    state.deletedLinks.clear();
     updateUI();
   });
 }
@@ -145,6 +167,8 @@ function renderMarketSelector() {
       if (checkbox.checked) {
         state.selectedMarkets.add(country.code);
         card.classList.add('selected');
+        state.deletedLinks.delete(`${country.code}-ios`);
+        state.deletedLinks.delete(`${country.code}-android`);
       } else {
         state.selectedMarkets.delete(country.code);
         card.classList.remove('selected');
@@ -159,6 +183,7 @@ function renderMarketSelector() {
 // Select market presets
 function selectPreset(presetName) {
   state.selectedMarkets.clear();
+  state.deletedLinks.clear();
   
   // Update UI preset active class
   document.querySelectorAll('.btn-preset').forEach(btn => {
@@ -281,22 +306,22 @@ function setupSearch() {
 }
 
 // Core Link Generation Logic
-function buildLink(country) {
+function buildLink(country, os) {
   const base = country.deepLink;
   const pidParam = 'pid';
   const pidVal = encodeURIComponent(state.mediaSource || 'qinyueblivz_int');
   
+  // Resolve key for custom settings
+  const customKey = `${country.code}-${os}`;
+  
   // Resolve campaign code
-  const marketCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
+  const marketCode = state.customCampaignCodes[customKey] || country.campaignCode || country.code;
   const campaign = state.campaignTemplate.replace('[MARKET]', marketCode);
   
-  // Resolve target OS for this country
-  const activeOS = state.customOS[country.code] || state.targetOS;
-  
   // Payout and lookback values
-  const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
-  const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
-  const lookback = state.customLookbacks[country.code] || country.lookback;
+  const defaultPayout = os === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+  const payout = state.customPayouts[customKey] !== undefined ? state.customPayouts[customKey] : defaultPayout;
+  const lookback = state.customLookbacks[customKey] || country.lookback;
   
   // Format payout
   const formattedPayout = parseFloat(payout).toFixed(2);
@@ -333,24 +358,32 @@ function buildLink(country) {
 
 // Get the links for currently selected & filtered markets
 function getSelectedLinks() {
-  return countriesData
-    .filter(country => {
-      // Must be selected
-      if (!state.selectedMarkets.has(country.code)) return false;
-      // Must pass search filter
-      if (state.searchQuery) {
-        const matchesName = country.name.toLowerCase().includes(state.searchQuery);
-        const matchesCode = country.code.toLowerCase().includes(state.searchQuery);
-        if (!matchesName && !matchesCode) return false;
-      }
-      return true;
-    })
-    .map(country => {
-      return {
+  const links = [];
+  countriesData.forEach(country => {
+    // Must be selected
+    if (!state.selectedMarkets.has(country.code)) return;
+    
+    // Must pass search filter
+    if (state.searchQuery) {
+      const matchesName = country.name.toLowerCase().includes(state.searchQuery);
+      const matchesCode = country.code.toLowerCase().includes(state.searchQuery);
+      if (!matchesName && !matchesCode) return;
+    }
+    
+    // Generate a link for each active target OS
+    state.targetOS.forEach(os => {
+      const customKey = `${country.code}-${os}`;
+      // Skip if this specific link was deleted
+      if (state.deletedLinks.has(customKey)) return;
+      
+      links.push({
         country,
-        url: buildLink(country)
-      };
+        os,
+        url: buildLink(country, os)
+      });
     });
+  });
+  return links;
 }
 
 // Triggered when inputs or selections update
@@ -395,22 +428,23 @@ function renderTableView(selectedLinks) {
           <tr>
             <th>Market</th>
             <th>Type</th>
-            <th style="width: 120px;">OS</th>
+            <th style="width: 80px;">OS</th>
             <th>Campaign Name</th>
             <th style="width: 100px;">Payout</th>
             <th style="width: 100px;">Lookback</th>
             <th>Generated Link</th>
+            <th style="width: 60px; text-align: center;">Action</th>
           </tr>
         </thead>
         <tbody>
   `;
 
-  selectedLinks.forEach(({ country, url }) => {
-    const activeOS = state.customOS[country.code] || state.targetOS;
-    const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
-    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
-    const lookback = state.customLookbacks[country.code] || country.lookback;
-    const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
+  selectedLinks.forEach(({ country, os, url }) => {
+    const customKey = `${country.code}-${os}`;
+    const defaultPayout = os === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const payout = state.customPayouts[customKey] !== undefined ? state.customPayouts[customKey] : defaultPayout;
+    const lookback = state.customLookbacks[customKey] || country.lookback;
+    const campaignCode = state.customCampaignCodes[customKey] || country.campaignCode || country.code;
     
     // Status pill
     let statusClass = 'status-standard';
@@ -430,24 +464,11 @@ function renderTableView(selectedLinks) {
       </span>
     `;
 
-    // OS selector/badge
-    const hasSplitPayout = country.payoutIOS !== country.payoutAOS;
-    let osControlHtml = '';
-    if (hasSplitPayout) {
-      osControlHtml = `
-        <div class="os-toggle-group" data-code="${country.code}">
-          <button type="button" class="os-toggle-btn ios-btn ${activeOS === 'ios' ? 'active' : ''}" data-os="ios">iOS</button>
-          <button type="button" class="os-toggle-btn android-btn ${activeOS === 'android' ? 'active' : ''}" data-os="android">AOS</button>
-        </div>
-      `;
-    } else {
-      osControlHtml = `
-        <span class="os-universal-badge">iOS/AOS</span>
-      `;
-    }
+    // Static OS badge
+    const osBadgeHtml = `<span class="os-badge ${os === 'ios' ? 'ios' : 'android'}">${os === 'ios' ? 'iOS' : 'AOS'}</span>`;
 
     html += `
-      <tr data-code="${country.code}">
+      <tr data-key="${customKey}">
         <td>
           <div class="country-cell">
             <span style="font-size: 1.25rem;">${country.flag}</span>
@@ -459,20 +480,20 @@ function renderTableView(selectedLinks) {
           </div>
         </td>
         <td>${typePill}</td>
-        <td>${osControlHtml}</td>
+        <td>${osBadgeHtml}</td>
         <td>
           <input type="text" class="value-input campaign-code-input" style="width: 80px; text-align: left; font-family: monospace;" 
-                 value="${campaignCode}" data-code="${country.code}" title="Customize campaign market code">
+                 value="${campaignCode}" data-key="${customKey}" title="Customize campaign market code">
         </td>
         <td>
           <div style="display: flex; align-items: center; gap: 0.25rem;">
             <input type="number" class="value-input payout-input" step="0.01" min="0" 
-                   value="${payout}" data-code="${country.code}">
+                   value="${payout}" data-key="${customKey}">
             <span style="font-size: 0.8rem; font-weight: 600;">${country.currency === 'USD' ? '$' : '€'}</span>
           </div>
         </td>
         <td>
-          <select class="value-input lookback-select" data-code="${country.code}" style="width: 70px;">
+          <select class="value-input lookback-select" data-key="${customKey}" style="width: 70px;">
             <option value="7d" ${lookback === '7d' ? 'selected' : ''}>7d</option>
             <option value="100d" ${lookback === '100d' ? 'selected' : ''}>100d</option>
             <option value="30d" ${lookback === '30d' ? 'selected' : ''}>30d</option>
@@ -480,14 +501,19 @@ function renderTableView(selectedLinks) {
         </td>
         <td>
           <div class="link-cell">
-            <div class="link-input-display" onclick="copyIndividualLink('${url}', '${country.name}')" title="Click to copy link">${url}</div>
-            <button class="copy-icon-btn" onclick="copyIndividualLink('${url}', '${country.name}')" title="Copy to clipboard">
+            <div class="link-input-display" onclick="copyIndividualLink('${url}', '${country.name} (${os.toUpperCase()})')" title="Click to copy link">${url}</div>
+            <button class="copy-icon-btn" onclick="copyIndividualLink('${url}', '${country.name} (${os.toUpperCase()})')" title="Copy to clipboard">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
             <a href="${url}" target="_blank" class="open-link-btn" title="Open and test link">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             </a>
           </div>
+        </td>
+        <td style="text-align: center;">
+          <button type="button" class="delete-row-btn" data-key="${customKey}" title="Remove this link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+          </button>
         </td>
       </tr>
     `;
@@ -501,26 +527,23 @@ function renderTableView(selectedLinks) {
 
   container.innerHTML = html;
 
-  // Add event listeners to OS toggles
-  container.querySelectorAll('.os-toggle-btn').forEach(btn => {
+  // Add event listeners to delete buttons
+  container.querySelectorAll('.delete-row-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const group = btn.closest('.os-toggle-group');
-      const code = group.getAttribute('data-code');
-      const os = btn.getAttribute('data-os');
-      state.customOS[code] = os;
-      // Clear custom payout override for this country to let it fall back to default payout for the new OS
-      delete state.customPayouts[code];
+      const key = btn.getAttribute('data-key');
+      state.deletedLinks.add(key);
       updateUI();
+      showToast('Attribution link removed from list.');
     });
   });
 
   // Add event listeners to custom inputs in the table
   container.querySelectorAll('.payout-input').forEach(input => {
     input.addEventListener('change', (e) => {
-      const code = e.target.getAttribute('data-code');
+      const key = e.target.getAttribute('data-key');
       const val = parseFloat(e.target.value);
       if (!isNaN(val)) {
-        state.customPayouts[code] = val;
+        state.customPayouts[key] = val;
         updateUI();
       }
     });
@@ -528,16 +551,16 @@ function renderTableView(selectedLinks) {
 
   container.querySelectorAll('.lookback-select').forEach(select => {
     select.addEventListener('change', (e) => {
-      const code = e.target.getAttribute('data-code');
-      state.customLookbacks[code] = e.target.value;
+      const key = e.target.getAttribute('data-key');
+      state.customLookbacks[key] = e.target.value;
       updateUI();
     });
   });
 
   container.querySelectorAll('.campaign-code-input').forEach(input => {
     input.addEventListener('change', (e) => {
-      const code = e.target.getAttribute('data-code');
-      state.customCampaignCodes[code] = e.target.value.trim().toUpperCase();
+      const key = e.target.getAttribute('data-key');
+      state.customCampaignCodes[key] = e.target.value.trim().toUpperCase();
       updateUI();
     });
   });
@@ -554,12 +577,12 @@ function renderCardView(selectedLinks) {
 
   let html = '<div class="card-view-grid">';
   
-  selectedLinks.forEach(({ country, url }) => {
-    const activeOS = state.customOS[country.code] || state.targetOS;
-    const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
-    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
-    const lookback = state.customLookbacks[country.code] || country.lookback;
-    const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
+  selectedLinks.forEach(({ country, os, url }) => {
+    const customKey = `${country.code}-${os}`;
+    const defaultPayout = os === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const payout = state.customPayouts[customKey] !== undefined ? state.customPayouts[customKey] : defaultPayout;
+    const lookback = state.customLookbacks[customKey] || country.lookback;
+    const campaignCode = state.customCampaignCodes[customKey] || country.campaignCode || country.code;
     const campaign = state.campaignTemplate.replace('[MARKET]', campaignCode);
     
     let badgeClass = 'standard';
@@ -572,35 +595,25 @@ function renderCardView(selectedLinks) {
       badgeText = 'Sensitive Market';
     }
 
-    const hasSplitPayout = country.payoutIOS !== country.payoutAOS;
-    let osControlHtml = '';
-    if (hasSplitPayout) {
-      osControlHtml = `
-        <div class="os-toggle-group" data-code="${country.code}">
-          <button type="button" class="os-toggle-btn ios-btn ${activeOS === 'ios' ? 'active' : ''}" data-os="ios">iOS</button>
-          <button type="button" class="os-toggle-btn android-btn ${activeOS === 'android' ? 'active' : ''}" data-os="android">AOS</button>
-        </div>
-      `;
-    } else {
-      osControlHtml = `
-        <span class="os-universal-badge">iOS/AOS</span>
-      `;
-    }
+    const osBadgeHtml = `<span class="os-badge ${os === 'ios' ? 'ios' : 'android'}" style="font-size: 0.7rem; margin-left: 0.5rem; text-transform: uppercase;">${os === 'ios' ? 'iOS' : 'AOS'}</span>`;
 
     html += `
-      <div class="link-card ${country.sensitive ? 'sensitive-card' : ''}">
+      <div class="link-card ${country.sensitive ? 'sensitive-card' : ''}" data-key="${customKey}">
         <div class="card-header">
           <div class="card-title">
             <span>${country.flag}</span>
-            <div>${country.name} (${country.code})</div>
+            <div style="display: flex; align-items: center;">
+              ${country.name} (${country.code})
+              ${osBadgeHtml}
+            </div>
           </div>
           <span class="card-badge ${badgeClass}">${badgeText}</span>
         </div>
         
         <div class="card-details-grid">
           <div class="detail-item">
-            <span class="detail-label">OS Mode</span>
-            <span class="detail-value">${osControlHtml}</span>
+            <span class="detail-label">OS Platform</span>
+            <span class="detail-value" style="text-transform: uppercase; font-weight: 600;">${os === 'ios' ? 'iOS' : 'Android'}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Payout rate</span>
@@ -621,13 +634,16 @@ function renderCardView(selectedLinks) {
         </div>
 
         <div class="card-link-container">
-          <div class="link-input-display" onclick="copyIndividualLink('${url}', '${country.name}')" title="Click to copy link">${url}</div>
-          <button class="btn btn-primary" onclick="copyIndividualLink('${url}', '${country.name}')" style="padding: 0.4rem 0.75rem;" title="Copy">
+          <div class="link-input-display" onclick="copyIndividualLink('${url}', '${country.name} (${os.toUpperCase()})')" title="Click to copy link">${url}</div>
+          <button class="btn btn-primary" onclick="copyIndividualLink('${url}', '${country.name} (${os.toUpperCase()})')" style="padding: 0.4rem 0.75rem;" title="Copy">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           </button>
           <a href="${url}" target="_blank" class="btn btn-accent" style="padding: 0.4rem 0.75rem;" title="Test">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
           </a>
+          <button type="button" class="btn delete-card-btn" data-key="${customKey}" style="padding: 0.4rem 0.75rem; border-color: rgba(255, 82, 82, 0.3); color: var(--warning);" title="Remove">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+          </button>
         </div>
       </div>
     `;
@@ -636,15 +652,13 @@ function renderCardView(selectedLinks) {
   html += '</div>';
   container.innerHTML = html;
 
-  // Add event listeners to OS toggles
-  container.querySelectorAll('.os-toggle-btn').forEach(btn => {
+  // Add event listeners to delete card buttons
+  container.querySelectorAll('.delete-card-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const group = btn.closest('.os-toggle-group');
-      const code = group.getAttribute('data-code');
-      const os = btn.getAttribute('data-os');
-      state.customOS[code] = os;
-      delete state.customPayouts[code];
+      const key = btn.getAttribute('data-key');
+      state.deletedLinks.add(key);
       updateUI();
+      showToast('Attribution link removed from list.');
     });
   });
 }
