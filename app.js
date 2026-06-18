@@ -267,18 +267,18 @@ function setupActionButtons() {
     state.pubId = '';
     state.mediaSource = 'qinyueblivz_int';
     state.campaignTemplate = 'CP_GWM_[MARKET]_15odds_impressions';
-    state.targetOS = 'android';
+    state.targetOS = new Set(['android', 'ios']);
     state.customPayouts = {};
     state.customLookbacks = {};
     state.customCampaignCodes = {};
-    state.customOS = {};
+    state.deletedLinks.clear();
     
     document.getElementById('pubId').value = '';
     document.getElementById('mediaSource').value = 'qinyueblivz_int';
     
     // Reset OS UI
     document.getElementById('btnOsAndroid').classList.add('active');
-    document.getElementById('btnOsiOS').classList.remove('active');
+    document.getElementById('btnOsiOS').classList.add('active');
     
     selectPreset('launch');
     showToast('Dashboard configuration reset.');
@@ -741,16 +741,16 @@ function exportToCSV() {
   // Headers
   csvContent += 'Country Name,Country Code,Campaign Name,Payout Value,Payout Currency,Payout Model,Click Lookback,Attribution URL,Target OS\n';
   
-  selectedLinks.forEach(({ country, url }) => {
-    const activeOS = state.customOS[country.code] || state.targetOS;
-    const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
-    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
-    const lookback = state.customLookbacks[country.code] || country.lookback;
-    const campaignCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
+  selectedLinks.forEach(({ country, os, url }) => {
+    const customKey = `${country.code}-${os}`;
+    const defaultPayout = os === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const payout = state.customPayouts[customKey] !== undefined ? state.customPayouts[customKey] : defaultPayout;
+    const lookback = state.customLookbacks[customKey] || country.lookback;
+    const campaignCode = state.customCampaignCodes[customKey] || country.campaignCode || country.code;
     const campaign = state.campaignTemplate.replace('[MARKET]', campaignCode);
     const escapedUrl = url.replace(/"/g, '""');
     
-    csvContent += `"${country.name}","${country.code}","${campaign}",${parseFloat(payout).toFixed(2)},"${country.currency}","CPI","${lookback}","${escapedUrl}","${activeOS.toUpperCase()}"\n`;
+    csvContent += `"${country.name}","${country.code}","${campaign}",${parseFloat(payout).toFixed(2)},"${country.currency}","CPI","${lookback}","${escapedUrl}","${os.toUpperCase()}"\n`;
   });
   
   const encodedUri = encodeURI(csvContent);
@@ -778,40 +778,40 @@ window.runSanityCheck = function() {
   }
 
   let errors = [];
-  selectedLinks.forEach(({ country, url }) => {
+  selectedLinks.forEach(({ country, os, url }) => {
+    const customKey = `${country.code}-${os}`;
     // 1. Deep link validation
     if (!url.startsWith(country.deepLink)) {
-      errors.push(`[${country.code}] URL does not start with correct deep link base: ${country.deepLink}`);
+      errors.push(`[${country.code}-${os}] URL does not start with correct deep link base: ${country.deepLink}`);
     }
     
     // 2. Pub ID / af_channel validation
     const channelParam = `af_channel=${state.pubId || 'PUBID'}`;
     if (!url.includes(channelParam)) {
-      errors.push(`[${country.code}] URL missing correct Publisher ID (af_channel).`);
+      errors.push(`[${country.code}-${os}] URL missing correct Publisher ID (af_channel).`);
     }
 
     // 3. Campaign validation
-    const marketCode = state.customCampaignCodes[country.code] || country.campaignCode || country.code;
+    const marketCode = state.customCampaignCodes[customKey] || country.campaignCode || country.code;
     const expectedCampaign = state.campaignTemplate.replace('[MARKET]', marketCode);
     const campaignParam = `c=${encodeURIComponent(expectedCampaign)}`;
     if (!url.includes(campaignParam)) {
-      errors.push(`[${country.code}] URL campaign string mismatch. Expected: ${expectedCampaign}`);
+      errors.push(`[${country.code}-${os}] URL campaign string mismatch. Expected: ${expectedCampaign}`);
     }
 
     // 4. Payout validation
-    const activeOS = state.customOS[country.code] || state.targetOS;
-    const defaultPayout = activeOS === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
-    const payout = state.customPayouts[country.code] !== undefined ? state.customPayouts[country.code] : defaultPayout;
+    const defaultPayout = os === 'ios' ? (country.payoutIOS !== undefined ? country.payoutIOS : country.payoutAOS) : (country.payoutAOS !== undefined ? country.payoutAOS : country.payoutIOS);
+    const payout = state.customPayouts[customKey] !== undefined ? state.customPayouts[customKey] : defaultPayout;
     const payoutParam = `af_cost_value=${parseFloat(payout).toFixed(2)}`;
     if (!url.includes(payoutParam)) {
-      errors.push(`[${country.code}] URL payout value mismatch. Expected: ${payoutParam}`);
+      errors.push(`[${country.code}-${os}] URL payout value mismatch. Expected: ${payoutParam}`);
     }
 
     // 5. Lookback validation
-    const lookback = state.customLookbacks[country.code] || country.lookback;
+    const lookback = state.customLookbacks[customKey] || country.lookback;
     const lookbackParam = `af_click_lookback=${lookback}`;
     if (!url.includes(lookbackParam)) {
-      errors.push(`[${country.code}] URL lookback window mismatch. Expected: ${lookbackParam}`);
+      errors.push(`[${country.code}-${os}] URL lookback window mismatch. Expected: ${lookbackParam}`);
     }
   });
 
